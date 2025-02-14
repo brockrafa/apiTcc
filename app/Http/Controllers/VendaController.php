@@ -66,17 +66,21 @@ class VendaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $venda)
+    public function update(Request $request, $id)
     {
-        $venda = Venda::find($venda);
+        $venda = Venda::find($id);
         if (!$venda) {
             return response()->json([
-                'errors' => 'Venda com id ' . $venda . ' não existe.'
+                'errors' => 'Venda com id ' . $id . ' não existe.'
             ], Response::HTTP_NOT_FOUND);
         }
 
+        $produtos = ProdutoVenda::where('venda_id',$id)->delete();
+
+
+
         return response()->json([
-            'errors' => 'teste'
+            $produtos
         ], Response::HTTP_NOT_FOUND);
     }
 

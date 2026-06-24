@@ -17,6 +17,11 @@ return new class extends Migration
             $table->unsignedBigInteger("forma_pagamento_id")->nullable();
             $table->decimal("total", 10, 2);
             $table->date("data_venda");
+            $table->string("tipo_venda")->nullable();
+            $table->integer("parcelas")->nullable();
+            $table->decimal("entrada", 10, 2)->nullable();
+            $table->decimal("valor_parcela", 10, 2)->nullable();
+            $table->date("primeiro_vencimento")->nullable();
             $table->foreign("cliente_id")->references("id")->on("clientes");
             $table->foreign("forma_pagamento_id")->references("id")->on("forma_pagamentos");
             $table->timestamps();

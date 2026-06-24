@@ -10,9 +10,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 class ClienteController extends Controller
 {
     private array $validacaoPadrao = [
-        'nome' => 'required|string|min:4',
-        'telefone' => 'required|string',
-        'email' => 'nullable|email'
+        'nome' => 'required|string|min:4'
     ];
 
     public function index()

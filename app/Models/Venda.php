@@ -14,15 +14,16 @@ class Venda extends Model
 
     public function produtos()
     {
-        return $this->belongsToMany(Produto::class, 'produto_vendas')
+        return $this->belongsToMany(Produto::class, 'item_vendas')
             ->select('produtos.id', 'produtos.produto', 'produtos.valor', 'produtos.valorVenda')
             ->withPivot('quantidade', 'valor_unitario','tipo');
     }
 
     public function itens()
     {
-        return $this->hasMany(ProdutoVenda::class, 'venda_id');
+        return $this->hasMany(ItemVenda::class, 'venda_id');
     }
+    
 
     public function lancamentos(): HasMany
     {

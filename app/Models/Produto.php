@@ -19,7 +19,7 @@ class Produto extends Model
 
     public function vendas()
     {
-        return $this->belongsToMany(Venda::class, 'produto_vendas');
+        return $this->belongsToMany(Venda::class, 'item_vendas');
     }
     
 }

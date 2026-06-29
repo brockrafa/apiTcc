@@ -18,6 +18,13 @@ class LancamentoFinanceiro extends Model
         'data_vencimento',
         'data_pagamento',
         'status',
+        'tipo',
+        'descricao',
+        'fornecedor',
+        'categoria_id',
+        'forma_pagamento',
+        'conta_pagar_id',
+        'observacao'
     ];
 
     protected $casts = [

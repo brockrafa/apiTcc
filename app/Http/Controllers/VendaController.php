@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Venda;
 use App\Models\Cliente;
 use App\Models\Produto;
-use App\Models\ProdutoVenda;
+use App\Models\ItemVenda;
 use App\Models\Servico;
 use App\Models\LancamentoFinanceiro;
 use Illuminate\Http\Request;
@@ -90,7 +90,7 @@ class VendaController extends Controller
             $venda->tipo_venda = $request->condicao_pagamento['tipo'];
 
             // Remove itens e lançamentos antigos para recriar
-            ProdutoVenda::where('venda_id', $id)->delete();
+            ItemVenda::where('venda_id', $id)->delete();
             LancamentoFinanceiro::where('venda_id', $id)->delete();
 
             $this->salvarItens($request->produtos, $venda);
@@ -151,15 +151,13 @@ class VendaController extends Controller
     private function salvarItens(array $produtos, Venda $venda): void
     {
         foreach ($produtos as $produto) {
-            $model = $produto['tipo'] === 'servico'
-                ? Servico::find($produto['id'])
-                : Produto::find($produto['id']);
+            $model = $produto['tipo'] === 'servico' ? Servico::find($produto['id']) : Produto::find($produto['id']);
 
             if (!$model) {
                 abort(Response::HTTP_NOT_FOUND, "Item com id {$produto['id']} não existe.");
             }
 
-            $item = new ProdutoVenda();
+            $item = new ItemVenda();
             $item->venda_id      = $venda->id;
             $item->tipo          = $produto['tipo'];
             $item->quantidade    = $produto['quantidade'];

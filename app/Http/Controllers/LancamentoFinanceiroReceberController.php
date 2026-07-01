@@ -19,7 +19,7 @@ class LancamentoFinanceiroReceberController extends Controller
                 'cliente:id,nome',
                 'venda:id,data_venda,tipo_venda,total,parcelas,valor_parcela,entrada,forma_pagamento_id',
             ])
-            ->whereRaw("DATE_FORMAT(data_vencimento, '%Y-%m') = ?", [$mes])
+            ->whereRaw("DATE_FORMAT(data_vencimento, '%Y-%m') = ? and tipo = 'receber'", [$mes])
             ->orderBy('data_vencimento')
             ->get();
 

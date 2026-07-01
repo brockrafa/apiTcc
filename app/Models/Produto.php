@@ -13,7 +13,7 @@ class Produto extends Model
         'produto',
         'estoque',
         'valor',
-        'valorVenda',
+        'valor_venda',
         'categoria'
     ];
 

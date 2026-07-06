@@ -30,7 +30,6 @@ return new class extends Migration
          Schema::table('item_vendas', function (Blueprint $table) {
             $table->dropForeign(['servico_id']);
             $table->dropColumn('tipo');
-            $table->unsignedBigInteger("produto_id")->nullable(false)->change();
             $table->dropColumn('servico_id');
         });
     }

@@ -35,8 +35,6 @@ return new class extends Migration
             $table->dropForeign(['categoria_id']);
             $table->dropForeign(['conta_pagar_id']);
             $table->dropColumn(['tipo', 'descricao', 'fornecedor', 'categoria_id', 'forma_pagamento', 'conta_pagar_id', 'observacao']);
-            $table->unsignedBigInteger("venda_id")->nullable(false)->change();
-            $table->unsignedBigInteger("cliente_id")->nullable(false)->change();
         });
     }
 };

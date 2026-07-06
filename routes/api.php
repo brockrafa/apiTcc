@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ProdutoController;
@@ -10,37 +11,174 @@ use App\Http\Controllers\LancamentoFinanceiroReceberController;
 use App\Http\Controllers\LancamentoFinanceiroPagarController;
 use App\Http\Controllers\ContaPagarController;
 use App\Http\Controllers\DespesaRecorrenteController;
+use App\Http\Controllers\AuthController;
 
-Route::resource('clientes', ClienteController::class);
-Route::resource('produtos', ProdutoController::class);
-Route::resource('categorias', CategoriaController::class);
-Route::resource('servicos', ServicoController::class);
-Route::resource('vendas', VendaController::class);
-Route::resource('forma-pagamento', FormaPagamentoController::class);
-Route::resource('lancamentos-financeiros', LancamentoFinanceiroReceberController::class);
-Route::patch('/lancamentos-financeiros/{id}/baixar', [LancamentoFinanceiroReceberController::class, 'baixar']);
-Route::patch('/lancamentos-financeiros/{id}/baixar-com-valor',
-    [LancamentoFinanceiroReceberController::class, 'baixarComValor']);
+Route::middleware('auth:sanctum')->group(function () {
 
-Route::get('/lancamentos/contas-pagar',                             [LancamentoFinanceiroPagarController::class, 'index']);
-Route::post('/lancamentos-financeiros/lancar-recorrentes-pagar',    [LancamentoFinanceiroPagarController::class, 'lancarRecorrentes']);
-Route::patch('/contas-pagar/{id}/pagar',                            [LancamentoFinanceiroPagarController::class, 'pagar']);
-Route::delete('/contas-pagar/{id}',                                 [LancamentoFinanceiroPagarController::class, 'destroy']);
-Route::delete('/contas-pagar/{id}',                                 [LancamentoFinanceiroPagarController::class, 'destroy']);
-Route::put('/contas-pagar/{id}',                                    [LancamentoFinanceiroPagarController::class, 'update']);
+    // ── Clientes ──────────────────────────────────
+    Route::resource('clientes', ClienteController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:cadastros.clientes.view');
 
+    Route::resource('clientes', ClienteController::class)
+        ->only(['store'])
+        ->middleware('permission:cadastros.clientes.create');
 
-// ── Contas a Pagar ────────────────────────────────────────
-Route::get('/contas-pagar/resumo',                [ContaPagarController::class, 'resumo']);
-Route::post('/contas-pagar/lancar-recorrentes',   [ContaPagarController::class, 'lancarRecorrentes']);
-Route::get('/contas-pagar',                       [ContaPagarController::class, 'index']);
-Route::post('/contas-pagar',                      [ContaPagarController::class, 'store']);
+    Route::resource('clientes', ClienteController::class)
+        ->only(['update'])
+        ->middleware('permission:cadastros.clientes.edit');
+        
+    Route::resource('clientes', ClienteController::class)
+        ->only(['destroy'])
+        ->middleware('permission:cadastros.clientes.delete');
 
+    // ── Produtos ──────────────────────────────────
+    Route::resource('produtos', ProdutoController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:cadastros.produtos.view');
 
-// ── Despesas Recorrentes ──────────────────────────────────
-Route::get('/despesas-recorrentes',               [DespesaRecorrenteController::class, 'index']);
-Route::post('/despesas-recorrentes',              [DespesaRecorrenteController::class, 'store']);
-Route::put('/despesas-recorrentes/{id}',          [DespesaRecorrenteController::class, 'update']);
-Route::delete('/despesas-recorrentes/{id}',       [DespesaRecorrenteController::class, 'destroy']);
-Route::get('/despesas-recorrentes/{id}',       [DespesaRecorrenteController::class, 'show']);
+    Route::resource('produtos', ProdutoController::class)
+        ->only(['store'])
+        ->middleware('permission:cadastros.produtos.create');
 
+    Route::resource('produtos', ProdutoController::class)
+        ->only(['update'])
+        ->middleware('permission:cadastros.produtos.edit');
+
+    Route::resource('produtos', ProdutoController::class)
+        ->only(['destroy'])
+        ->middleware('permission:cadastros.produtos.delete');
+
+    // ── Categorias ────────────────────────────────
+    Route::resource('categorias', CategoriaController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:cadastros.categorias.view');
+
+    Route::resource('categorias', CategoriaController::class)
+        ->only(['store'])
+        ->middleware('permission:cadastros.categorias.create');
+
+    Route::resource('categorias', CategoriaController::class)
+        ->only(['update'])
+        ->middleware('permission:cadastros.categorias.edit');
+
+    Route::resource('categorias', CategoriaController::class)
+        ->only(['destroy'])
+        ->middleware('permission:cadastros.categorias.delete');
+
+    // ── Serviços ──────────────────────────────────
+    Route::resource('servicos', ServicoController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:cadastros.servicos.view');
+
+    Route::resource('servicos', ServicoController::class)
+        ->only(['store'])
+        ->middleware('permission:cadastros.servicos.create');
+
+    Route::resource('servicos', ServicoController::class)
+        ->only(['update'])
+        ->middleware('permission:cadastros.servicos.edit');
+
+    Route::resource('servicos', ServicoController::class)
+        ->only(['destroy'])
+        ->middleware('permission:cadastros.servicos.delete');
+
+    // ── Vendas ────────────────────────────────────
+    Route::resource('vendas', VendaController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:vendas.view');
+
+    Route::resource('vendas', VendaController::class)
+        ->only(['store'])
+        ->middleware('permission:vendas.create');
+
+    Route::resource('vendas', VendaController::class)
+        ->only(['update'])
+        ->middleware('permission:vendas.edit');
+
+    Route::resource('vendas', VendaController::class)
+        ->only(['destroy'])
+        ->middleware('permission:vendas.delete');
+
+    // ── Forma de Pagamento ────────────────────────
+    Route::resource('forma-pagamento', FormaPagamentoController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:cadastros.formas-pagamento.view');
+
+    Route::resource('forma-pagamento', FormaPagamentoController::class)
+        ->only(['store'])
+        ->middleware('permission:cadastros.formas-pagamento.create');
+
+    Route::resource('forma-pagamento', FormaPagamentoController::class)
+        ->only(['update'])
+        ->middleware('permission:cadastros.formas-pagamento.edit');
+
+    Route::resource('forma-pagamento', FormaPagamentoController::class)
+        ->only(['destroy'])
+        ->middleware('permission:cadastros.formas-pagamento.delete');
+
+    // ── Contas a Receber (Lançamentos Financeiros) ─
+    Route::resource('lancamentos-financeiros', LancamentoFinanceiroReceberController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:financeiro.lancamentos.view');
+
+    Route::resource('lancamentos-financeiros', LancamentoFinanceiroReceberController::class)
+        ->only(['store'])
+        ->middleware('permission:financeiro.lancamentos.create');
+
+    Route::resource('lancamentos-financeiros', LancamentoFinanceiroReceberController::class)
+        ->only(['update'])
+        ->middleware('permission:financeiro.lancamentos.edit');
+        
+    Route::resource('lancamentos-financeiros', LancamentoFinanceiroReceberController::class)
+        ->only(['destroy'])
+        ->middleware('permission:financeiro.lancamentos.delete');
+
+    Route::patch('/lancamentos-financeiros/{id}/baixar', [LancamentoFinanceiroReceberController::class, 'baixar'])
+        ->middleware('permission:financeiro.lancamentos.baixar');
+
+    Route::patch('/lancamentos-financeiros/{id}/baixar-com-valor', [LancamentoFinanceiroReceberController::class, 'baixarComValor'])
+        ->middleware('permission:financeiro.lancamentos.baixar');
+
+    // ── Contas a Pagar ────────────────────────────
+    Route::get('/lancamentos/contas-pagar', [LancamentoFinanceiroPagarController::class, 'index'])
+        ->middleware('permission:financeiro.contas-pagar.view');
+
+    Route::post('/lancamentos-financeiros/lancar-recorrentes-pagar', [LancamentoFinanceiroPagarController::class, 'lancarRecorrentes'])
+        ->middleware('permission:financeiro.contas-pagar.create');
+
+    Route::put('/contas-pagar/{id}', [LancamentoFinanceiroPagarController::class, 'update'])
+        ->middleware('permission:financeiro.contas-pagar.edit');
+
+    Route::patch('/contas-pagar/{id}/pagar', [LancamentoFinanceiroPagarController::class, 'pagar'])
+        ->middleware('permission:financeiro.contas-pagar.edit');
+
+    Route::delete('/contas-pagar/{id}', [LancamentoFinanceiroPagarController::class, 'destroy'])
+        ->middleware('permission:financeiro.contas-pagar.delete');
+
+    // ── Despesas Recorrentes ──────────────────────
+    Route::get('/despesas-recorrentes', [DespesaRecorrenteController::class, 'index'])
+        ->middleware('permission:financeiro.despesas-recorrentes.view');
+
+    Route::get('/despesas-recorrentes/{id}', [DespesaRecorrenteController::class, 'show'])
+        ->middleware('permission:financeiro.despesas-recorrentes.view');
+
+    Route::post('/despesas-recorrentes', [DespesaRecorrenteController::class, 'store'])
+        ->middleware('permission:financeiro.despesas-recorrentes.create');
+
+    Route::put('/despesas-recorrentes/{id}', [DespesaRecorrenteController::class, 'update'])
+        ->middleware('permission:financeiro.despesas-recorrentes.edit');
+
+    Route::delete('/despesas-recorrentes/{id}', [DespesaRecorrenteController::class, 'destroy'])
+        ->middleware('permission:financeiro.despesas-recorrentes.delete');
+
+    // ── Autenticação e Usuários ───────────────────
+    Route::post('/usuarios', [AuthController::class, 'criarUsuario'])->middleware('permission:cadastros.usuarios.create');
+    Route::get('/usuarios', [AuthController::class, 'index'])->middleware('permission:cadastros.usuarios.view');
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/registrar-empresa', [AuthController::class, 'registrarEmpresa'])->middleware('permission:cadastros.empresas.create');
+});
+
+// Rotas públicas
+Route::post('/login', [AuthController::class, 'login']);

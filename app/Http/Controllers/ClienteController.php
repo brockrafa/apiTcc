@@ -21,7 +21,10 @@ class ClienteController extends Controller
     public function store(Request $request)
     {   
         $request->validate($this->validacaoPadrao,$this->messages);
-        $cliente = Cliente::create($request->all());
+        $cliente = new Cliente();
+        $cliente->fill($request->all());
+        $cliente->telefone = str_replace(['(',')','-',' '],'',$request->telefone);
+        $cliente->save();
         return response()->json($cliente, Response::HTTP_CREATED);
     }
 
@@ -42,7 +45,9 @@ class ClienteController extends Controller
         try{
             $cliente = Cliente::findOrFail($id);
             $request->validate($this->validacaoPadrao,$this->messages);
-            $cliente->update($request->all());
+            $cliente->fill($request->all());
+            $cliente->telefone = str_replace(['(',')','-',' '],'',$request->telefone);
+            $cliente->save();
             return response()->noContent();
         }catch(ModelNotFoundException $e){
             return response()->json([

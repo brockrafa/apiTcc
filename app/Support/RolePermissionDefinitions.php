@@ -71,8 +71,24 @@ class RolePermissionDefinitions
             'vendedor' => [
                 'cadastros.clientes.view',
                 'cadastros.clientes.create',
+                'cadastros.clientes.edit',
+                'cadastros.clientes.delete',
+
+                'cadastros.produtos.view',
+                'cadastros.produtos.create',
+
+                'cadastros.servicos.view',
+                'cadastros.servicos.create',
+
+                'cadastros.categorias.view',
+                'cadastros.categorias.create',
+                'cadastros.categorias.edit',
+
+                'cadastros.formas-pagamento.view',
+                
                 'vendas.view',
                 'vendas.create',
+                'vendas.edit',
             ],
             'financeiro' => [
                 'financeiro.lancamentos.view',

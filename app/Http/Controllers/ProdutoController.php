@@ -13,7 +13,7 @@ class ProdutoController extends Controller
         'produto' => 'required|min:4',
         'estoque' => 'required|integer',
         'valor' => 'required|numeric',
-        'valorVenda' => 'required|numeric',
+        'valor_venda' => 'required|numeric',
         'categoria' => 'required|integer'
     ];
 

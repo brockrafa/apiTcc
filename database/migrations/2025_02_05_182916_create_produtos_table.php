@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('produto');
             $table->integer('estoque');
             $table->decimal('valor', 8, 2);
-            $table->decimal('valorVenda', 8, 2);
+            $table->decimal('valor_venda', 8, 2);
             $table->integer('categoria');
             $table->timestamps();
         });

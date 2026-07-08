@@ -14,9 +14,8 @@ class AuthController extends Controller
 {
     public function index(Request $request)
     {
-        
         $empresaId = $request->user()->empresa_id;
-        $users = User::where('empresa_id', $empresaId)->get();
+        $users = User::where('empresa_id', $empresaId)->with('roles')->get();
         return response()->json($users);
     }
 
@@ -132,5 +131,54 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logout realizado.']);
+    }
+
+    public function atualizarUsuario(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $editandoSiMesmo = $user->id === $request->user()->id;
+
+        if (!$editandoSiMesmo) {
+            if ($user->empresa_id !== $request->user()->empresa_id || !$request->user()->can('cadastros.usuarios.edit')) {
+                return response()->json(['message' => 'Você não tem permissão para atualizar este usuário.'], 403);
+            }
+        }
+
+        $validado = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'password' => 'sometimes|required|string|min:8',
+            'role' => 'sometimes|required|string|exists:roles,name',
+        ]);
+
+        if (isset($validado['name'])) {
+            $user->name = $validado['name'];
+        }
+        if (isset($validado['email'])) {
+            $user->email = $validado['email'];
+        }
+        if (isset($validado['password'])) {
+            $user->password = Hash::make($validado['password']);
+        }
+
+        if (isset($validado['role']) && $request->user()->can('cadastros.usuarios.edit')) {
+            $user->syncRoles([$validado['role']]);
+        }
+
+        $user->save();
+
+        return response()->json(['message' => 'Usuário atualizado com sucesso.'],204);
+    }
+
+    public function editarUsuario(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->empresa_id !== $request->user()->empresa_id) {
+            return response()->json(['message' => 'Você não tem permissão para visualizar este usuário.'], 403);
+        }
+        $user->load('roles');
+        return response()->json($user);
     }
 }

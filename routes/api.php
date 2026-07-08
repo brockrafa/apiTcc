@@ -175,8 +175,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Autenticação e Usuários ───────────────────
     Route::post('/usuarios', [AuthController::class, 'criarUsuario'])->middleware('permission:cadastros.usuarios.create');
     Route::get('/usuarios', [AuthController::class, 'index'])->middleware('permission:cadastros.usuarios.view');
-    Route::get('/me', [AuthController::class, 'me']);
+    Route::get("/usuarios/{id}", [AuthController::class, 'editarUsuario'])->middleware('permission:cadastros.usuarios.edit');
+    Route::put("/usuarios/{id}", [AuthController::class, 'atualizarUsuario'])->middleware('permission:cadastros.usuarios.edit');
+    Route::delete("/usuarios/{id}", [AuthController::class, 'deletarUsuario'])->middleware('permission:cadastros.usuarios.delete');
+    
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/me', [AuthController::class, 'me']);
     Route::post('/registrar-empresa', [AuthController::class, 'registrarEmpresa'])->middleware('permission:cadastros.empresas.create');
 });
 

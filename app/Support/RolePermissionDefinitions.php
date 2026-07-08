@@ -11,6 +11,7 @@ class RolePermissionDefinitions
      * Usado tanto pelo EmpresaObserver (empresa nova) quanto pelo
      * Command roles:update (empresa existente).
      */
+
     public static function all(): array
     {
         return [

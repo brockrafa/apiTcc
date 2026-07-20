@@ -12,8 +12,13 @@ use App\Http\Controllers\LancamentoFinanceiroPagarController;
 use App\Http\Controllers\ContaPagarController;
 use App\Http\Controllers\DespesaRecorrenteController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RoleController;
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    // ── Roles e Permissões ────────────────────────
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::get('/roles/{role}', [RoleController::class, 'show']);
 
     // ── Clientes ──────────────────────────────────
     Route::resource('clientes', ClienteController::class)

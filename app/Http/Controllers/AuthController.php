@@ -9,13 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class AuthController extends Controller
 {
     public function index(Request $request)
     {
         $empresaId = $request->user()->empresa_id;
-        $users = User::where('empresa_id', $empresaId)->with('roles')->get();
+        $users = User::where('empresa_id', $empresaId)->with('roles', 'permissions')->get();
         return response()->json($users);
     }
 
@@ -53,7 +54,9 @@ class AuthController extends Controller
             ->where('empresa_id', $empresa->id) // ou team_id, conforme seu config
             ->first();
 
-        $user->assignRole($role);
+        if ($role) {
+            $user->assignRole($role);
+        }
 
         return response()->json([
             'message' => 'Empresa e usuário criados com sucesso.',
@@ -90,6 +93,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
+        app(PermissionRegistrar::class)->setPermissionsTeamId($user->empresa_id);
 
         return response()->json([
             'user' => $user,
@@ -98,45 +102,55 @@ class AuthController extends Controller
         ]);
     }
 
-    // Cadastro de novo usuário dentro de uma empresa já existente (feito por um admin)
+    // Cadastro de novo usuário dentro de uma empresa já existente
     public function criarUsuario(Request $request)
     {
         $validado = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
-            'role' => 'required|string|exists:roles,name',
+            'role' => 'nullable|string|exists:roles,name', // Nullable permite o perfil "Personalizado"
+            'ativo' => 'sometimes|boolean',
+            'permissions' => 'sometimes|array',
+            'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         $empresaId = $request->user()->empresa_id;
+
+        // Verificar se o usuário logado é admin para criar outro admin
+        if(!empty($validado['role']) && $validado['role'] === 'admin' && !$request->user()->hasRole('admin')) {
+            return response()->json(['message' => 'Apenas administradores podem criar novos usuários admins.'], 403);
+        }
 
         $user = User::create([
             'empresa_id' => $empresaId,
             'name' => $validado['name'],
             'email' => $validado['email'],
             'password' => Hash::make($validado['password']),
+            'ativo' => $validado['ativo'] ?? true,
         ]);
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($empresaId);
 
-        if($validado['role'] == 'admin' && !$request->user()->hasRole('admin')) {
-            return response()->json(['message' => 'Apenas administradores podem criar novos usuários admins.'], 403);
+        // Se uma role foi enviada, nós a atribuímos
+        if (!empty($validado['role'])) {
+            $user->assignRole($validado['role']);
         }
-        $user->assignRole($validado['role']);
-        return response()->json(['message' => 'Usuário criado com sucesso.'], 201);
-    }
 
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
+        // Sincronizar permissões customizadas diretas (mesmo se vier vazio, é seguro)
+        if (isset($validado['permissions'])) {
+            $user->syncPermissions($validado['permissions']); // O Spatie já aceita o array de nomes direto
+        }
 
-        return response()->json(['message' => 'Logout realizado.']);
+        return response()->json([
+            'message' => 'Usuário criado com sucesso.',
+            'user' => $user,
+        ], 201);
     }
 
     public function atualizarUsuario(Request $request, $id)
     {
         $user = User::findOrFail($id);
-
         $editandoSiMesmo = $user->id === $request->user()->id;
 
         if (!$editandoSiMesmo) {
@@ -148,8 +162,10 @@ class AuthController extends Controller
         $validado = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
-            'password' => 'sometimes|required|string|min:8',
-            'role' => 'sometimes|required|string|exists:roles,name',
+            'role' => 'nullable|string|exists:roles,name', // Permite trocar para nulo/vazio
+            'ativo' => 'sometimes|boolean',
+            'permissions' => 'sometimes|array',
+            'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         if (isset($validado['name'])) {
@@ -158,17 +174,43 @@ class AuthController extends Controller
         if (isset($validado['email'])) {
             $user->email = $validado['email'];
         }
-        if (isset($validado['password'])) {
-            $user->password = Hash::make($validado['password']);
+        if (isset($validado['ativo'])) {
+            $user->ativo = $validado['ativo'];
         }
-
-        if (isset($validado['role']) && $request->user()->can('cadastros.usuarios.edit')) {
-            $user->syncRoles([$validado['role']]);
-        }
-
+        
         $user->save();
 
-        return response()->json(['message' => 'Usuário atualizado com sucesso.'],204);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($user->empresa_id);
+
+        // Gerenciamento de Roles e Permissões (Apenas quem tem autorização pode mudar acessos)
+        if ($request->user()->can('cadastros.usuarios.edit') || $request->user()->hasRole(['admin', 'gestor'])) {
+            
+            // Se a chave 'role' veio na requisição...
+            if (array_key_exists('role', $validado)) {
+                if (empty($validado['role'])) {
+                    // Se veio vazia, remove todas as roles (usuário vira customizado)
+                    $user->syncRoles([]);
+                } else {
+                    // Previne que alguém escale para admin sem ser admin
+                    if($validado['role'] === 'admin' && !$request->user()->hasRole('admin')) {
+                        return response()->json(['message' => 'Apenas admins podem promover alguém a admin.'], 403);
+                    }
+                    $user->syncRoles([$validado['role']]);
+                }
+            }
+
+            // Sincronizar permissões customizadas (seja adicionando ou limpando o array)
+            if (array_key_exists('permissions', $validado)) {
+                $user->syncPermissions($validado['permissions']);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Usuário atualizado com sucesso.',
+            'user' => $user,
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+        ], 200);
     }
 
     public function editarUsuario(Request $request, $id)
@@ -178,7 +220,35 @@ class AuthController extends Controller
         if ($user->empresa_id !== $request->user()->empresa_id) {
             return response()->json(['message' => 'Você não tem permissão para visualizar este usuário.'], 403);
         }
-        $user->load('roles');
-        return response()->json($user);
+        
+        app(PermissionRegistrar::class)->setPermissionsTeamId($user->empresa_id);
+        
+        return response()->json([
+            'user' => $user,
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getDirectPermissions()->pluck('name'), // Melhor usar getDirectPermissions aqui para não misturar com as da Role no frontend
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Logout realizado.']);
+    }
+
+    public function deletarUsuario(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->empresa_id !== $request->user()->empresa_id || !$request->user()->can('cadastros.usuarios.delete')) {
+            return response()->json(['message' => 'Você não tem permissão para deletar este usuário.'], 403);
+        }
+
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'Você não pode deletar a si mesmo.'], 400);
+        }
+
+        $user->delete();
+        return response()->json(['message' => 'Usuário deletado com sucesso.']);
     }
 }

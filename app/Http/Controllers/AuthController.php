@@ -58,9 +58,7 @@ class AuthController extends Controller
             $user->assignRole($role);
         }
 
-        return response()->json([
-            'message' => 'Empresa e usuário criados com sucesso.',
-        ], 201);
+        return response()->json(['message' => 'Empresa e usuário criados com sucesso.',], 201);
     }
 
     // Login
@@ -77,12 +75,47 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciais inválidas.'], 401);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $expiracaoMinutos = (int) env('SANCTUM_EXPIRATION', 60);
+        $token = $user->createToken('auth_token',['*'],now()->addMinutes($expiracaoMinutos))->plainTextToken;
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($user->empresa_id);
+
+        return response()->json(['token' => $token,
+        'user' => $user,
+        'expires_at' => now()->addMinutes(config('sanctum.expiration', 60))->timestamp * 1000,
+        'roles' => $user->getRoleNames(),
+        'permissions' => $user->getAllPermissions()->pluck('name'),]);
+    }
+
+    public function refreshToken(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Não autenticado.'], 401);
+        }
+
+        $tokenAtual = $user->currentAccessToken();
+
+        if (! $tokenAtual) {
+            return response()->json(['message' => 'Token atual não encontrado.'], 401);
+        }
+
+        $expiracaoMinutos = (int) env('SANCTUM_EXPIRATION', 60);
+
+        $novoToken = $user->createToken(
+            'auth_token',
+            ['*'],
+            now()->addMinutes($expiracaoMinutos)
+        )->plainTextToken;
+
+        $tokenAtual->delete();
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($user->empresa_id);
 
         return response()->json([
-            'token' => $token,
+            'token' => $novoToken,
+            'expires_at' => now()->addMinutes(config('sanctum.expiration', 60))->timestamp * 1000,
             'user' => $user,
             'roles' => $user->getRoleNames(),
             'permissions' => $user->getAllPermissions()->pluck('name'),

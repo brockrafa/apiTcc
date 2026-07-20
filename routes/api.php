@@ -190,8 +190,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/me', [AuthController::class, 'me']);
+
+    
     Route::post('/registrar-empresa', [AuthController::class, 'registrarEmpresa'])->middleware('permission:cadastros.empresas.create');
+    
+    Route::post('/refresh', [AuthController::class, 'refreshToken']);
 });
+
 
 // Rotas públicas
 Route::post('/login', [AuthController::class, 'login']);

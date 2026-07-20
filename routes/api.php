@@ -140,6 +140,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/lancamentos-financeiros/{id}/baixar-com-valor', [LancamentoFinanceiroReceberController::class, 'baixarComValor'])
         ->middleware('permission:financeiro.lancamentos.baixar');
 
+    Route::get('/lancamentos-financeiros/{id}/restante-parcelas', [LancamentoFinanceiroReceberController::class, 'buscarRestanteParcelas'])
+        ->middleware('permission:financeiro.lancamentos.baixar');
+
     // ── Contas a Pagar ────────────────────────────
     Route::get('/lancamentos/contas-pagar', [LancamentoFinanceiroPagarController::class, 'index'])
         ->middleware('permission:financeiro.contas-pagar.view');

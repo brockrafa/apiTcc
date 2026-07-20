@@ -196,6 +196,7 @@ class VendaController extends Controller
                 'numero_parcela' => 1,
                 'total_parcelas' => 1,
                 'valor'          => $venda->total,
+                'valor_pago'     => $venda->total,
                 'data_vencimento' => $venda->data_venda,
                 'data_pagamento' => $venda->data_venda,
                 'status'         => 'pago',
@@ -214,6 +215,7 @@ class VendaController extends Controller
                 'numero_parcela'  => 0, // 0 = entrada
                 'total_parcelas'  => $venda->parcelas,
                 'valor'           => $venda->entrada,
+                'valor_pago'      => $venda->entrada,
                 'data_vencimento' => $venda->data_venda,
                 'data_pagamento'  => $venda->data_venda,
                 'status'          => 'pago',

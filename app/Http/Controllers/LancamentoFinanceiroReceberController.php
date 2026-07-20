@@ -20,6 +20,7 @@ class LancamentoFinanceiroReceberController extends Controller
                 'venda:id,data_venda,tipo_venda,total,parcelas,valor_parcela,entrada,forma_pagamento_id',
             ])
             ->whereRaw("DATE_FORMAT(data_vencimento, '%Y-%m') = ? and tipo = 'entrada'", [$mes])
+            //->whereRaw("tipo = 'entrada'")
             ->orderBy('data_vencimento')
             ->get();
 
@@ -81,6 +82,7 @@ class LancamentoFinanceiroReceberController extends Controller
 
         $lancamento->update([
             'status'         => 'pago',
+            'valor_pago' => $lancamento->valor,
             'data_pagamento' => now()->toDateString(),
         ]);
 
@@ -107,7 +109,7 @@ class LancamentoFinanceiroReceberController extends Controller
     {
         $request->validate([
             'valor_pago'                       => 'required|numeric|min:0.01',
-            'estrategia'                       => 'required|in:redistribuir,abater_ultima,criar_parcelas,sem_ajuste',
+            'estrategia'                       => 'required|in:redistribuir,abater_ultima,criar_parcelas,sem_ajuste,manter_aberta',
             'novas_parcelas'                   => 'required_if:estrategia,criar_parcelas|array|min:1',
             'novas_parcelas.*.valor'           => 'required_if:estrategia,criar_parcelas|numeric|min:0.01',
             'novas_parcelas.*.data_vencimento' => 'required_if:estrategia,criar_parcelas|date_format:Y-m-d',
@@ -126,55 +128,72 @@ class LancamentoFinanceiroReceberController extends Controller
                 'errors' => 'Este lançamento já foi baixado.'
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
+        
+        // FIX:::: O VALOR_PAGO e o VALOR_ORIGINAL são o mesmo, logo a diferença esta sendo calculada de forma errada
         $valorPago     = (float) $request->valor_pago;
         $valorOriginal = (float) $lancamento->valor;
-        $diferenca     = $valorPago - $valorOriginal;
+        $valorPagoAnterior = (float) $lancamento->valor_pago;
+        $diferenca     = $valorPago - ($valorOriginal - $valorPagoAnterior);
 
-        DB::transaction(function () use ($lancamento, $valorPago, $diferenca, $request) {
+       DB::beginTransaction();
 
-            // 1. Baixa a parcela atual
+        if($request->estrategia === 'manter_aberta') {
+            //$valor_pago_parcial = $lancamento->valor_pago;
             $lancamento->update([
-                'status'         => 'pago',
-                'valor'          => $valorPago,
-                'data_pagamento' => now()->toDateString(),
+                'valor_pago' => $lancamento->valor_pago +  $request->valor_pago
             ]);
+            DB::commit();
+            return;
+        }
 
-            // 2. Sem diferença relevante → encerra
-            if (abs($diferenca) < 0.01) {
-                return;
-            }
+        // 1. Baixa a parcela atual
+        $lancamento->update([
+            'status'         => 'pago',
+            'valor'          => $valorPago + abs($lancamento->valor_pago),
+            'valor_pago' => $valorPago + abs($lancamento->valor_pago),
+            'data_pagamento' => now()->toDateString(),
+        ]);
 
-            // 3. Estratégia "sem_ajuste" → registra a baixa e ignora a diferença
-            if ($request->estrategia === 'sem_ajuste') {
-                return;
-            }
+        // 2. Sem diferença relevante → encerra
+        if (abs($diferenca) < 0.01) {
+            DB::commit();
+            return;
+        }
 
-            // 4. Estratégia "criar_parcelas" → cria novos lançamentos para cobrir o saldo
-            if ($request->estrategia === 'criar_parcelas') {
-                $this->criarParcelasExtras($lancamento, $request->novas_parcelas);
-                return;
-            }
+        // 3. Estratégia "sem_ajuste" → registra a baixa e ignora a diferença
+        if ($request->estrategia === 'sem_ajuste') {
+            DB::commit();
+            return;
+        }
 
-            // 5. Redistribuir ou abater_ultima entre parcelas existentes
-            $parcelasAbertas = LancamentoFinanceiro::where('venda_id', $lancamento->venda_id)
-                ->whereIn('status', ['pendente', 'atrasado'])
-                ->where('numero_parcela', '>', $lancamento->numero_parcela)
-                ->orderBy('numero_parcela')
-                ->get();
+        // 4. Estratégia "criar_parcelas" → cria novos lançamentos para cobrir o saldo
+        if ($request->estrategia === 'criar_parcelas') {
+            $this->criarParcelasExtras($lancamento, $request->novas_parcelas);
+            DB::commit();
+            return;
+        }
 
-            if ($parcelasAbertas->isEmpty()) {
-                return;
-            }
+        // 5. Redistribuir ou abater_ultima entre parcelas existentes
+        $parcelasAbertas = LancamentoFinanceiro::where('venda_id', $lancamento->venda_id)
+            ->whereIn('status', ['pendente', 'atrasado'])
+            ->where('numero_parcela', '>', $lancamento->numero_parcela)
+            ->orderBy('numero_parcela')
+            ->get();
 
-            if ($request->estrategia === 'redistribuir') {
-                $this->redistribuirDiferenca($parcelasAbertas, $diferenca);
-            } else {
-                $this->abaterNaUltimaParcela($parcelasAbertas, $diferenca);
-            }
-        });
+        if ($parcelasAbertas->isEmpty()) {
+            return response()->json([
+                'errors' => 'Não há parcelas futuras para ajustar a diferença. Use a estratégia "criar_parcelas" para gerar novas parcelas.'
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($request->estrategia === 'redistribuir') {
+            $this->redistribuirDiferenca($parcelasAbertas, $diferenca);
+        } else {
+            $this->abaterNaUltimaParcela($parcelasAbertas, $diferenca);
+        }
 
         $lancamento->refresh();
+        DB::commit();
         return response()->json($lancamento, Response::HTTP_OK);
     }
 
@@ -221,7 +240,7 @@ class LancamentoFinanceiroReceberController extends Controller
      * Distribui a diferença igualmente entre todas as parcelas abertas.
      * Centavos residuais vão para a última parcela.
      */
-    private function redistribuirDiferenca($parcelas, float $diferenca): void
+    private function redistribuirDiferenca($parcelas, float $diferenca)
     {
         $total    = $parcelas->count();
         $ajuste   = round(-$diferenca / $total, 2);
@@ -252,7 +271,7 @@ class LancamentoFinanceiroReceberController extends Controller
     /**
      * Concentra toda a diferença na última parcela em aberto.
      */
-    private function abaterNaUltimaParcela($parcelas, float $diferenca): void
+    private function abaterNaUltimaParcela($parcelas, float $diferenca)
     {
         $ultima    = $parcelas->last();
         $novoValor = round((float) $ultima->valor - $diferenca, 2);
@@ -316,6 +335,16 @@ class LancamentoFinanceiroReceberController extends Controller
                 'total'      => $dados['atrasado']->total ?? 0,
             ],
         ], Response::HTTP_OK);
+    }
+
+    public function buscarRestanteParcelas($vendaId)
+    {   
+        $parcelasRestantes = LancamentoFinanceiro::where('venda_id', $vendaId)
+            ->whereIn('status', ['pendente', 'atrasado'])
+            ->orderBy('numero_parcela')
+            ->get();
+
+        return response()->json($parcelasRestantes, Response::HTTP_OK);
     }
     
 }

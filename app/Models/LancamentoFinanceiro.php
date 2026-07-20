@@ -15,6 +15,7 @@ class LancamentoFinanceiro extends Model
         'numero_parcela',
         'total_parcelas',
         'valor',
+        'valor_pago',
         'data_vencimento',
         'data_pagamento',
         'status',

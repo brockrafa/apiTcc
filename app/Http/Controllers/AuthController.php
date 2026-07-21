@@ -165,8 +165,8 @@ class AuthController extends Controller
             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
             'role' => 'nullable|string|exists:roles,name', // Permite trocar para nulo/vazio
             'ativo' => 'sometimes|boolean',
-            'permissions' => 'sometimes|array',
-            'permissions.*' => 'string|exists:permissions,name',
+            //'permissions' => 'sometimes|array',
+            //'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         if (isset($validado['name'])) {

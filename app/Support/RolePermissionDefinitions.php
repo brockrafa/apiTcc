@@ -41,6 +41,8 @@ class RolePermissionDefinitions
 
                 'vendas.view',
                 'vendas.create',
+                'vendas.edit',
+                'vendas.delete',
 
                 'financeiro.lancamentos.view',
                 'financeiro.lancamentos.create',

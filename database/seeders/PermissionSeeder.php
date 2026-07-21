@@ -7,6 +7,7 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use App\Models\Empresa;
 use App\Models\User;
+use App\Models\Cliente;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
@@ -97,6 +98,17 @@ class PermissionSeeder extends Seeder
                 'name' => 'admin',
                 'email' => 'admin@brocksolution.com',
                 'password' => Hash::make('12345678'),
+            ]);
+
+            $cliente = Cliente::create([
+                'nome' => 'Cliente Demo',
+                'email' => 'cliente@brocksolution.com',
+                'empresa_id' => $empresa->id,
+            ]);
+
+            $categoria = \App\Models\Categoria::create([
+                'nome' => 'Categoria Demo',
+                'empresa_id' => $empresa->id,
             ]);
 
             app(PermissionRegistrar::class)->setPermissionsTeamId($empresa->id);

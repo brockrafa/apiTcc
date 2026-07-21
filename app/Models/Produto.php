@@ -2,19 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Produto extends Model
 {
-    use HasFactory;
+    use HasFactory, HasEmpresaScope;
 
     protected $fillable = [
         'produto',
         'estoque',
         'valor',
         'valor_venda',
-        'categoria'
+        'categoria',
+        'empresa_id'
     ];
 
     public function vendas()

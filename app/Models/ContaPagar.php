@@ -1,13 +1,14 @@
 <?php
 
 namespace App\Models;
+use App\Models\Concerns\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContaPagar extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasEmpresaScope;
 
     protected $table = 'contas_pagar';
 
@@ -19,6 +20,7 @@ class ContaPagar extends Model
         'observacao', 'status',
         'valor_pago', 'data_pagamento',
         'forma_pagamento', 'observacao_pagamento',
+        'empresa_id',
     ];
 
     protected $casts = [

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class LancamentoFinanceiro extends Model
 {
-    use HasFactory;
+    use HasFactory, HasEmpresaScope;
 
     protected $table = 'lancamentos_financeiros';
 
@@ -28,7 +29,8 @@ class LancamentoFinanceiro extends Model
         'categoria_id',
         'forma_pagamento',
         'conta_pagar_id',
-        'observacao'
+        'observacao',
+        'empresa_id'
     ];
 
     protected $casts = [

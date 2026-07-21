@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEmpresaScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\LancamentoFinanceiro;
@@ -9,8 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Venda extends Model
 {
-    use HasFactory;
-    protected $fillable = ['cliente_id', 'total', 'forma_pagamento', 'data_venda', 'tipo_venda','parcelas','entrada','valor_parcela','primeiro_vencimento'];
+    use HasFactory, HasEmpresaScope;
+    protected $fillable = ['cliente_id', 'total', 'forma_pagamento', 'data_venda', 'tipo_venda','parcelas','entrada','valor_parcela','primeiro_vencimento','empresa_id'];
 
     public function produtos()
     {

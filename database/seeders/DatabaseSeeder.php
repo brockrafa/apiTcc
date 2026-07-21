@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call(FormaPagamentoSeed::class);
         $this->call([
             PermissionSeeder::class,
+           // DemoDataSeeder::class,
         ]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Empresa;
 use App\Support\RolePermissionDefinitions;
 use Illuminate\Console\Command;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -46,6 +47,13 @@ class UpdateEmpresaRoles extends Command
         $this->info("Atualizando empresa #{$empresa->id} ({$empresa->nome})...");
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($empresa->id);
+
+        foreach (RolePermissionDefinitions::allPermissionNames() as $permissionName) {
+            Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'sanctum',
+            ]);
+        }
 
         foreach ($definicoes as $roleName => $permissoes) {
             $role = Role::firstOrCreate(

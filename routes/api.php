@@ -192,7 +192,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     
-    Route::post('/registrar-empresa', [AuthController::class, 'registrarEmpresa'])->middleware('permission:cadastros.empresas.create');
     
     Route::post('/refresh', [AuthController::class, 'refreshToken']);
 });

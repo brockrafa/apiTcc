@@ -98,6 +98,23 @@ class RolePermissionDefinitions
         ];
     }
 
+    public static function allPermissionNames(): array
+    {
+        $permissoes = [];
+
+        foreach (self::all() as $roleName => $permissoesDaRole) {
+            foreach ($permissoesDaRole as $permissao) {
+                if ($permissao === '*') {
+                    continue;
+                }
+
+                $permissoes[$permissao] = $permissao;
+            }
+        }
+
+        return array_values($permissoes);
+    }
+
     public static function resolvePermissions(array $permissoes): array
     {
         if (in_array('*', $permissoes, true)) {

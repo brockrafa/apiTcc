@@ -21,44 +21,12 @@ class AuthController extends Controller
     }
 
     // Cadastro de uma nova empresa + primeiro usuário (admin)
+    // Este fluxo agora é controlado exclusivamente via comando artisan, não mais pela API.
     public function registrarEmpresa(Request $request)
     {
-        if(!$request->user()->hasRole('admin')) {
-            return response()->json(['message' => 'Somente uma conta administradora pode registrar uma nova empresa.'], 403);
-        }
-
-        $validado = $request->validate([
-            'empresa_nome' => 'required|string|max:255',
-            'cnpj' => 'required|string|unique:empresas,cnpj',
-            'user_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        $empresa = Empresa::create([
-            'nome' => $validado['empresa_nome'],
-            'cnpj' => $validado['cnpj'],
-        ]);
-
-        $user = User::create([
-            'empresa_id' => $empresa->id,
-            'name' => $validado['user_name'],
-            'email' => $validado['email'],
-            'password' => Hash::make($validado['password']),
-        ]);
-
-        app(PermissionRegistrar::class)->setPermissionsTeamId($empresa->id);
-
-        $role = Role::where('name', 'admin')
-            ->where('guard_name', 'sanctum')
-            ->where('empresa_id', $empresa->id) // ou team_id, conforme seu config
-            ->first();
-
-        if ($role) {
-            $user->assignRole($role);
-        }
-
-        return response()->json(['message' => 'Empresa e usuário criados com sucesso.',], 201);
+        return response()->json([
+            'message' => 'A criação de empresas foi desativada para a API. Use o comando artisan empresa:create com a referência do contrato.',
+        ], 403);
     }
 
     // Login

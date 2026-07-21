@@ -87,6 +87,7 @@ class VendaController extends Controller
 
             $venda->total = 0;
             $venda->forma_pagamento_id = $request->forma_pagamento['id'];
+            $venda->data_venda = $request->filled('data_venda') ? $request->data_venda : $venda->data_venda;
             $venda->tipo_venda = $request->condicao_pagamento['tipo'];
 
             // Remove itens e lançamentos antigos para recriar
@@ -141,7 +142,7 @@ class VendaController extends Controller
         $venda->cliente_id        = $request->cliente_id;
         $venda->total             = 0;
         $venda->forma_pagamento_id = $request->forma_pagamento['id'];
-        $venda->data_venda        = now();
+        $venda->data_venda        = $request->filled('data_venda') ? $request->data_venda : now()->toDateString();
         $venda->tipo_venda        = $request->condicao_pagamento['tipo'];
         $venda->save();
 

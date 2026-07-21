@@ -64,7 +64,7 @@ class LancamentoFinanceiroReceberController extends Controller
         return response()->json($lancamento, Response::HTTP_OK);
     }
 
-    public function baixar($id)
+    public function baixar(Request $request, $id)
     {
         $lancamento = LancamentoFinanceiro::find($id);
 
@@ -83,7 +83,7 @@ class LancamentoFinanceiroReceberController extends Controller
         $lancamento->update([
             'status'         => 'pago',
             'valor_pago' => $lancamento->valor,
-            'data_pagamento' => now()->toDateString(),
+            'data_pagamento' => $request->filled('data_pagamento') ? $request->data_pagamento : now()->toDateString(),
         ]);
 
         return response()->json($lancamento, Response::HTTP_OK);
@@ -151,7 +151,7 @@ class LancamentoFinanceiroReceberController extends Controller
             'status'         => 'pago',
             'valor'          => $valorPago + abs($lancamento->valor_pago),
             'valor_pago' => $valorPago + abs($lancamento->valor_pago),
-            'data_pagamento' => now()->toDateString(),
+            'data_pagamento' => $request->filled('data_pagamento') ? $request->data_pagamento : now()->toDateString(),
         ]);
 
         // 2. Sem diferença relevante → encerra

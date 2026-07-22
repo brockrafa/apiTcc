@@ -14,7 +14,17 @@ class LancamentoFinanceiroPagarController extends Controller
 {
     public function index(Request $request)
     {
-        $lancamentos = LancamentoFinanceiro::where('tipo', 'saida')->where('tipo', 'saida')->orderBy('data_vencimento', 'asc')->get();
+        $mes = $request->query('mes', now()->format('Y-m'));
+    
+        $lancamentos = LancamentoFinanceiro::with([
+            'cliente:id,nome',
+            'venda:id,data_venda,tipo_venda,total,parcelas,valor_parcela,entrada,forma_pagamento_id',
+        ])
+        ->whereRaw("DATE_FORMAT(data_vencimento, '%Y-%m') = ? and tipo = 'saida'", [$mes])
+        ->orderBy('data_vencimento')
+        ->get();
+
+
         return response()->json($lancamentos);
     }
 
